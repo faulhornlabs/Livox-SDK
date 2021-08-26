@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 
+
+option(USE_SYSTEM_SPDLOG "Use spdlog from system" OFF)
+
 set(SDK_LIBRARY ${PROJECT_NAME}_static)
 add_library(${SDK_LIBRARY} STATIC "")
 
@@ -9,12 +12,24 @@ set(LIVOX_SDK_PATCH_VERSION "0")
 set(LIVOX_SDK_VERSION_STRING "${LIVOX_SDK_MAJOR_VERSION}.${LIVOX_SDK_MINOR_VERSION}.${LIVOX_SDK_PATCH_VERSION}")
 
 
+if (USE_SYSTEM_SPDLOG)
+        find_package(spdlog REQUIRED CONFIG)
+        target_link_libraries(${SDK_LIBRARY} PRIVATE spdlog::spdlog)
+else()
+        target_include_directories(${SDK_LIBRARY}
+                PUBLIC
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/third_party/spdlog>)
+
+endif()
+
+
+
 target_include_directories(${SDK_LIBRARY}
         PUBLIC
-        include
-        include/third_party/FastCRC
-        include/third_party/spdlog
-        include/third_party/cmdline
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include/livox_sdk>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/third_party/FastCRC>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/third_party/cmdline>
         PRIVATE
         src)
 
@@ -85,7 +100,20 @@ target_sources(${SDK_LIBRARY}
         src/base/wake_up/${PLATFORM}/wake_up_pipe.cpp)
 
 
-install(TARGETS ${SDK_LIBRARY}
-        PUBLIC_HEADER DESTINATION include
+include(CMakePackageConfigHelpers)
+configure_package_config_file(cmake/livox_sdk-config.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/gen/livox_sdk-config.cmake
+        INSTALL_DESTINATION lib/cmake/${PROJECT_NAME})
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/gen/livox_sdk-config-version.cmake
+        VERSION ${LIVOX_SDK_VERSION_STRING}
+        COMPATIBILITY SameMajorVersion )
+
+install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/gen/livox_sdk-config.cmake ${CMAKE_CURRENT_BINARY_DIR}/gen/livox_sdk-config-version.cmake
+        DESTINATION lib/cmake/${PROJECT_NAME})
+        
+install(TARGETS ${SDK_LIBRARY} EXPORT ${PROJECT_NAME}-targets
+        PUBLIC_HEADER DESTINATION include/livox_sdk
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib)
+
+install(EXPORT ${PROJECT_NAME}-targets DESTINATION lib/cmake/${PROJECT_NAME} NAMESPACE livox_sdk::)

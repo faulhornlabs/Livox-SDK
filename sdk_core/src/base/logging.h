@@ -24,9 +24,9 @@
 
 #ifndef LIVOX_LOGGING_H_
 #define LIVOX_LOGGING_H_
-#include "../include/third_party/spdlog/spdlog/spdlog.h"
-#include "../include/third_party/spdlog/spdlog/sinks/stdout_color_sinks.h"
-#include "../include/third_party/spdlog/spdlog/sinks/rotating_file_sink.h"
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/rotating_file_sink.h"
 
 #ifdef _WIN32
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? (strrchr(__FILE__, '\\') + 1):__FILE__)
